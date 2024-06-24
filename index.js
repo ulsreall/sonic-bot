@@ -10,6 +10,7 @@ const {
 const bip39 = require('bip39');
 const { derivePath } = require('ed25519-hd-key');
 const bs58 = require('bs58');
+const prompt = require('prompt');
 require('dotenv').config();
 
 const DEVNET_URL = 'https://devnet.sonic.game/';
@@ -43,7 +44,7 @@ async function pastikanAkunBebasSewa(kePublicKey) {
     );
 
     await sendAndConfirmTransaction(connection, transaksi, [keypairs[0]]);
-    console.log(`Memastikan saldo bebas sewa untuk akun: ${kePublicKey.toString()}`);
+    console.log(Memastikan saldo bebas sewa untuk akun: ${kePublicKey.toString()});
   }
 }
 
@@ -85,6 +86,10 @@ async function delay(ms) {
 }
 
 (async () => {
+  prompt.start();
+  
+  const { jumlahTransaksi } = await prompt.get(['jumlahTransaksi']);
+
   const seedPhrases = parseEnvArray(process.env.SEED_PHRASES);
   const privateKeys = parseEnvArray(process.env.PRIVATE_KEYS);
 
@@ -100,8 +105,8 @@ async function delay(ms) {
     throw new Error('Tidak ada SEED_PHRASES atau PRIVATE_KEYS yang valid ditemukan dalam file .env');
   }
 
-  const alamatAcak = buatAlamatAcak(keypairs.length * 100);
-  console.log(`Menghasilkan ${keypairs.length * 100} alamat acak:`, alamatAcak);
+  const alamatAcak = buatAlamatAcak(jumlahTransaksi);
+  console.log(Menghasilkan ${jumlahTransaksi} alamat acak:, alamatAcak);
 
   const jumlahUntukDikirim = 0.0002; // Diubah menjadi 0.0002 SOL
   let indeksKeypairSaatIni = 0;
@@ -109,23 +114,22 @@ async function delay(ms) {
 
   const saldoSol = (await getSolanaBalance(keypairs[indeksKeypairSaatIni])) / LAMPORTS_PER_SOL;
   if (saldoSol <= 0) {
-    console.log(`Saldo tidak mencukupi: ${saldoSol} SOL`);
+    console.log(Saldo tidak mencukupi: ${saldoSol} SOL);
     return;
   }
-  if (saldoSol < jumlahUntukDikirim * 100) {
-    console.log(`Saldo tidak mencukupi: ${saldoSol} SOL`);
+  if (saldoSol < jumlahUntukDikirim * jumlahTransaksi) {
+    console.log(Saldo tidak mencukupi: ${saldoSol} SOL);
     return;
   }
 
   for (const alamat of alamatAcak) {
     const kePublicKey = new PublicKey(alamat);
-
     try {
       await pastikanAkunBebasSewa(kePublicKey);
       await kirimSol(keypairs[indeksKeypairSaatIni], kePublicKey, jumlahUntukDikirim);
-      console.log(`Berhasil mengirim ${jumlahUntukDikirim} SOL ke ${alamat}`);
+      console.log(Berhasil mengirim ${jumlahUntukDikirim} SOL ke ${alamat});
     } catch (error) {
-      console.error(`Gagal mengirim SOL ke ${alamat}:`, error);
+      console.error(Gagal mengirim SOL ke ${alamat}:, error);
     }
     indeksKeypairSaatIni = (indeksKeypairSaatIni + 1) % keypairs.length;
     await delay(jedaAntaraPermintaan);
