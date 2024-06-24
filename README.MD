@@ -21,7 +21,8 @@ npm install
 buat file .env di root projek
 
 ```bash
-PRIVATE_KEYS=["your private key 1", "your private key 2"]
+PRIVATE_KEYS='["your private key here"]'
+JUMLAH_TRANSAKSI=5
 ```
 
 ### 4. Run script
