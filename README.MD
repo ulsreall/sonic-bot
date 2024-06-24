@@ -13,11 +13,11 @@ EVM :
 ### 1. Clone Repositori
 
 ```bash
-git clone https://github.com/Mnuralim/bot-sonic-sol-multi-phrase-PK.git
+git clone https://github.com/ulsreall/sonic-bot.git
 ```
 
 ```
-cd bot-sonic-sol
+cd sonic-bot
 ```
 
 ### 2. Instal Dependensi
@@ -43,7 +43,7 @@ npm run start
 
 \*pastikan udah install node js
 
-by :
+sc by :
 github : [Mnuralim](https://github.com/Mnuralim)
 twitter : @Izzycracker04
 telegram : @fitriay19
