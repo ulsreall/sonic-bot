@@ -1,17 +1,3 @@
-Feel free donate to my EVM or SOL address
-
-EVM :
-
-```bash
-0xAc34348Ea7E45dc9892DD299025a86a3c7532CA1
-```
-SOL :
-
-```bash
-2Y26TBVQzqhWehtrPKQ7hXy8qrmPRPmVoVPBPch26CRP
-```
-
-
 ## Langkah-langkah
 
 ### 1. Clone Repositori
