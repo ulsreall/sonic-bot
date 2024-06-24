@@ -1,11 +1,15 @@
-Feel free donate to my EVM address
+Feel free donate to my EVM or SOL address
 
 EVM :
 
 ```bash
-0x9902C3A98Df4b240ad5496cC26F89bAb8058f4aE
+0xAc34348Ea7E45dc9892DD299025a86a3c7532CA1
 ```
+SOL :
 
+```bash
+2Y26TBVQzqhWehtrPKQ7hXy8qrmPRPmVoVPBPch26CRP
+```
 
 
 ## Langkah-langkah
