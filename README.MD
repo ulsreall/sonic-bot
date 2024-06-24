@@ -18,7 +18,7 @@ npm install
 
 ### 3. Konfigurasi .env File
 
-buat file .env di root projek
+edit dengan private key kalian, dan atur berapa jumlah transaksi untuk 1x menjalankan script
 
 ```bash
 PRIVATE_KEYS='["your private key here"]'
