@@ -6,110 +6,128 @@ const {
   SystemProgram,
   sendAndConfirmTransaction,
   Keypair,
-} = require('@solana/web3.js')
-const bip39 = require('bip39')
-const { derivePath } = require('ed25519-hd-key')
-const bs58 = require('bs58')
-require('dotenv').config()
+} = require('@solana/web3.js');
+const bip39 = require('bip39');
+const { derivePath } = require('ed25519-hd-key');
+const bs58 = require('bs58');
+require('dotenv').config();
 
-const DEVNET_URL = 'https://devnet.sonic.game/'
-const connection = new Connection(DEVNET_URL, 'confirmed')
-const keypairs = []
+const DEVNET_URL = 'https://devnet.sonic.game/';
+const connection = new Connection(DEVNET_URL, 'confirmed');
+const keypairs = [];
 
-async function sendSol(fromKeypair, toPublicKey, amount) {
-  const transaction = new Transaction().add(
+async function kirimSol(dariKeypair, kePublicKey, jumlah) {
+  const transaksi = new Transaction().add(
     SystemProgram.transfer({
-      fromPubkey: fromKeypair.publicKey,
-      toPubkey: toPublicKey,
-      lamports: amount * LAMPORTS_PER_SOL,
+      fromPubkey: dariKeypair.publicKey,
+      toPubkey: kePublicKey,
+      lamports: jumlah * LAMPORTS_PER_SOL,
     })
-  )
+  );
 
-  const signature = await sendAndConfirmTransaction(connection, transaction, [fromKeypair])
+  const tandaTangan = await sendAndConfirmTransaction(connection, transaksi, [dariKeypair]);
 
-  console.log('Transaction confirmed with signature:', signature)
+  console.log('Transaksi dikonfirmasi dengan tanda tangan:', tandaTangan);
 }
 
-function generateRandomAddresses(count) {
-  const addresses = []
-  for (let i = 0; i < count; i++) {
-    const keypair = Keypair.generate()
-    addresses.push(keypair.publicKey.toString())
+async function pastikanAkunBebasSewa(kePublicKey) {
+  const infoAkun = await connection.getAccountInfo(kePublicKey);
+  if (infoAkun === null) {
+    const jumlahBebasSewa = await connection.getMinimumBalanceForRentExemption(0);
+    const transaksi = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: keypairs[0].publicKey,
+        toPubkey: kePublicKey,
+        lamports: jumlahBebasSewa,
+      })
+    );
+
+    await sendAndConfirmTransaction(connection, transaksi, [keypairs[0]]);
+    console.log(`Memastikan saldo bebas sewa untuk akun: ${kePublicKey.toString()}`);
   }
-  return addresses
+}
+
+function buatAlamatAcak(jumlah) {
+  const alamat = [];
+  for (let i = 0; i < jumlah; i++) {
+    const keypair = Keypair.generate();
+    alamat.push(keypair.publicKey.toString());
+  }
+  return alamat;
 }
 
 async function getKeypairFromSeed(seedPhrase) {
-  const seed = await bip39.mnemonicToSeed(seedPhrase)
-  const derivedSeed = derivePath("m/44'/501'/0'/0'", seed.toString('hex')).key
-  return Keypair.fromSeed(derivedSeed.slice(0, 32))
+  const seed = await bip39.mnemonicToSeed(seedPhrase);
+  const derivedSeed = derivePath("m/44'/501'/0'/0'", seed.toString('hex')).key;
+  return Keypair.fromSeed(derivedSeed.slice(0, 32));
 }
 
 function getKeypairFromPrivateKey(privateKey) {
-  const decoded = bs58.decode(privateKey)
-  return Keypair.fromSecretKey(decoded)
+  const decoded = bs58.decode(privateKey);
+  return Keypair.fromSecretKey(decoded);
 }
 
 function parseEnvArray(envVar) {
   try {
-    return JSON.parse(envVar)
+    return JSON.parse(envVar);
   } catch (e) {
-    console.error('Failed to parse environment variable:', envVar, e)
-    return []
+    console.error('Gagal mengurai variabel lingkungan:', envVar, e);
+    return [];
   }
 }
 
-async function getSolanaBalance(fromKeypair) {
-  return connection.getBalance(fromKeypair.publicKey)
+async function getSolanaBalance(dariKeypair) {
+  return connection.getBalance(dariKeypair.publicKey);
 }
 
 async function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-;(async () => {
-  const seedPhrases = parseEnvArray(process.env.SEED_PHRASES)
-  const privateKeys = parseEnvArray(process.env.PRIVATE_KEYS)
+(async () => {
+  const seedPhrases = parseEnvArray(process.env.SEED_PHRASES);
+  const privateKeys = parseEnvArray(process.env.PRIVATE_KEYS);
 
   for (const seedPhrase of seedPhrases) {
-    keypairs.push(await getKeypairFromSeed(seedPhrase))
+    keypairs.push(await getKeypairFromSeed(seedPhrase));
   }
 
   for (const privateKey of privateKeys) {
-    keypairs.push(getKeypairFromPrivateKey(privateKey))
+    keypairs.push(getKeypairFromPrivateKey(privateKey));
   }
 
   if (keypairs.length === 0) {
-    throw new Error('No valid SEED_PHRASES or PRIVATE_KEYS found in the .env file')
+    throw new Error('Tidak ada SEED_PHRASES atau PRIVATE_KEYS yang valid ditemukan dalam file .env');
   }
 
-  const randomAddresses = generateRandomAddresses(keypairs.length * 100)
-  console.log(`Generated ${keypairs.length * 100} random addresses:`, randomAddresses)
+  const alamatAcak = buatAlamatAcak(keypairs.length * 100);
+  console.log(`Menghasilkan ${keypairs.length * 100} alamat acak:`, alamatAcak);
 
-  const amountToSend = 0.001 //minimum 0.001 sol
-  let currentKeypairIndex = 0
-  const delayBetweenRequests = 5000 //replace if the network is congested
+  const jumlahUntukDikirim = 0.0002; // Diubah menjadi 0.0002 SOL
+  let indeksKeypairSaatIni = 0;
+  const jedaAntaraPermintaan = 5000; // Ubah jika jaringan sedang sibuk
 
-  const solBalance = (await getSolanaBalance(keypairs[currentKeypairIndex])) / LAMPORTS_PER_SOL
-  if (solBalance <= 0) {
-    console.log(`Insufficient balance: ${solBalance} SOL`)
-    return
+  const saldoSol = (await getSolanaBalance(keypairs[indeksKeypairSaatIni])) / LAMPORTS_PER_SOL;
+  if (saldoSol <= 0) {
+    console.log(`Saldo tidak mencukupi: ${saldoSol} SOL`);
+    return;
   }
-  if (solBalance < amountToSend * 100) {
-    console.log(`Insufficient balance: ${solBalance} SOL`)
-    return
+  if (saldoSol < jumlahUntukDikirim * 100) {
+    console.log(`Saldo tidak mencukupi: ${saldoSol} SOL`);
+    return;
   }
 
-  for (const address of randomAddresses) {
-    const toPublicKey = new PublicKey(address)
+  for (const alamat of alamatAcak) {
+    const kePublicKey = new PublicKey(alamat);
 
     try {
-      await sendSol(keypairs[currentKeypairIndex], toPublicKey, amountToSend)
-      console.log(`Successfully sent ${amountToSend} SOL to ${address}`)
+      await pastikanAkunBebasSewa(kePublicKey);
+      await kirimSol(keypairs[indeksKeypairSaatIni], kePublicKey, jumlahUntukDikirim);
+      console.log(`Berhasil mengirim ${jumlahUntukDikirim} SOL ke ${alamat}`);
     } catch (error) {
-      console.error(`Failed to send SOL to ${address}:`, error)
+      console.error(`Gagal mengirim SOL ke ${alamat}:`, error);
     }
-    currentKeypairIndex = (currentKeypairIndex + 1) % keypairs.length
-    await delay(delayBetweenRequests)
+    indeksKeypairSaatIni = (indeksKeypairSaatIni + 1) % keypairs.length;
+    await delay(jedaAntaraPermintaan);
   }
-})()
+})();
