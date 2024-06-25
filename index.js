@@ -100,7 +100,7 @@ async function delay(ms) {
     throw new Error('Tidak ada SEED_PHRASES atau PRIVATE_KEYS yang valid ditemukan dalam file .env');
   }
 
-  const jumlahTransaksi = parseInt(process.env.JUMLAH_TRANSAKSI) || (keypairs.length * 100); // Tambahkan pengaturan jumlah transaksi
+  const jumlahTransaksi = 100; // Set jumlah transaksi maksimal menjadi 100
   const alamatAcak = buatAlamatAcak(jumlahTransaksi);
   console.log(`Menghasilkan ${jumlahTransaksi} alamat acak:`, alamatAcak);
 
