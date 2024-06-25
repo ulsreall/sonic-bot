@@ -30,7 +30,7 @@ PRIVATE_KEYS='["your private key here"]'
 npm run start
 ```
 
-### 4. Selesai
+### 5. Done tinggal ngopi
 
 Bot akan berhenti ketika sudah mencapai 100 transaksi
 
