@@ -16,44 +16,44 @@ const DEVNET_URL = 'https://devnet.sonic.game/';
 const connection = new Connection(DEVNET_URL, 'confirmed');
 const keypairs = [];
 
-async function kirimSol(dariKeypair, kePublicKey, jumlah) {
-  const transaksi = new Transaction().add(
+async function sendSol(fromKeypair, toPublicKey, amount) {
+  const transaction = new Transaction().add(
     SystemProgram.transfer({
-      fromPubkey: dariKeypair.publicKey,
-      toPubkey: kePublicKey,
-      lamports: jumlah * LAMPORTS_PER_SOL,
+      fromPubkey: fromKeypair.publicKey,
+      toPubkey: toPublicKey,
+      lamports: amount * LAMPORTS_PER_SOL,
     })
   );
 
-  const tandaTangan = await sendAndConfirmTransaction(connection, transaksi, [dariKeypair]);
+  const signature = await sendAndConfirmTransaction(connection, transaction, [fromKeypair]);
 
-  console.log('Transaksi dikonfirmasi dengan tanda tangan:', tandaTangan);
+  console.log('Transaction confirmed with signature:', signature);
 }
 
-async function pastikanAkunBebasSewa(kePublicKey) {
-  const infoAkun = await connection.getAccountInfo(kePublicKey);
-  if (infoAkun === null) {
-    const jumlahBebasSewa = await connection.getMinimumBalanceForRentExemption(0);
-    const transaksi = new Transaction().add(
+async function ensureRentExemptAccount(toPublicKey) {
+  const accountInfo = await connection.getAccountInfo(toPublicKey);
+  if (accountInfo === null) {
+    const rentExemptAmount = await connection.getMinimumBalanceForRentExemption(0);
+    const transaction = new Transaction().add(
       SystemProgram.transfer({
         fromPubkey: keypairs[0].publicKey,
-        toPubkey: kePublicKey,
-        lamports: jumlahBebasSewa,
+        toPubkey: toPublicKey,
+        lamports: rentExemptAmount,
       })
     );
 
-    await sendAndConfirmTransaction(connection, transaksi, [keypairs[0]]);
-    console.log(`Memastikan saldo bebas sewa untuk akun: ${kePublicKey.toString()}`);
+    await sendAndConfirmTransaction(connection, transaction, [keypairs[0]]);
+    console.log(`Ensuring rent-exempt balance for account: ${toPublicKey.toString()}`);
   }
 }
 
-function buatAlamatAcak(jumlah) {
-  const alamat = [];
-  for (let i = 0; i < jumlah; i++) {
+function generateRandomAddresses(count) {
+  const addresses = [];
+  for (let i = 0; i < count; i++) {
     const keypair = Keypair.generate();
-    alamat.push(keypair.publicKey.toString());
+    addresses.push(keypair.publicKey.toString());
   }
-  return alamat;
+  return addresses;
 }
 
 async function getKeypairFromSeed(seedPhrase) {
@@ -71,13 +71,13 @@ function parseEnvArray(envVar) {
   try {
     return JSON.parse(envVar);
   } catch (e) {
-    console.error('Gagal mengurai variabel lingkungan:', envVar, e);
+    console.error('Failed to parse environment variable:', envVar, e);
     return [];
   }
 }
 
-async function getSolanaBalance(dariKeypair) {
-  return connection.getBalance(dariKeypair.publicKey);
+async function getSolanaBalance(fromKeypair) {
+  return connection.getBalance(fromKeypair.publicKey);
 }
 
 async function delay(ms) {
@@ -97,38 +97,46 @@ async function delay(ms) {
   }
 
   if (keypairs.length === 0) {
-    throw new Error('Tidak ada SEED_PHRASES atau PRIVATE_KEYS yang valid ditemukan dalam file .env');
+    throw new Error('No valid SEED_PHRASES or PRIVATE_KEYS found in .env file');
   }
 
-  const jumlahTransaksi = 100; // Set jumlah transaksi maksimal menjadi 100
-  const alamatAcak = buatAlamatAcak(jumlahTransaksi);
-  console.log(`Menghasilkan ${jumlahTransaksi} alamat acak:`, alamatAcak);
+  const transactionCount = 100; // Set maximum transaction count to 100
+  const randomAddresses = generateRandomAddresses(transactionCount);
+  console.log(`Generated ${transactionCount} random addresses:`, randomAddresses);
 
-  const jumlahUntukDikirim = 0.0002; // Diubah menjadi 0.0002 SOL
-  let indeksKeypairSaatIni = 0;
-  const jedaAntaraPermintaan = 5000; // Ubah jika jaringan sedang sibuk
+  const amountToSend = 0.0002; // Changed to 0.0002 SOL
+  let currentKeypairIndex = 0;
+  const delayBetweenRequests = 5000; // Adjust if the network is busy
 
-  const saldoSol = (await getSolanaBalance(keypairs[indeksKeypairSaatIni])) / LAMPORTS_PER_SOL;
-  if (saldoSol <= 0) {
-    console.log(`Saldo tidak mencukupi: ${saldoSol} SOL`);
+  const solBalance = (await getSolanaBalance(keypairs[currentKeypairIndex])) / LAMPORTS_PER_SOL;
+  if (solBalance <= 0) {
+    console.log(`Insufficient balance: ${solBalance} SOL`);
     return;
   }
-  if (saldoSol < jumlahUntukDikirim * jumlahTransaksi) {
-    console.log(`Saldo tidak mencukupi: ${saldoSol} SOL`);
+  if (solBalance < amountToSend * transactionCount) {
+    console.log(`Insufficient balance: ${solBalance} SOL`);
     return;
   }
 
-  for (let i = 0; i < jumlahTransaksi; i++) {
-    const kePublicKey = new PublicKey(alamatAcak[i]);
+  let successfulTransactions = 0; // Add a counter for successful transactions
+
+  for (let i = 0; i < transactionCount; i++) {
+    const toPublicKey = new PublicKey(randomAddresses[i]);
 
     try {
-      await pastikanAkunBebasSewa(kePublicKey);
-      await kirimSol(keypairs[indeksKeypairSaatIni], kePublicKey, jumlahUntukDikirim);
-      console.log(`Berhasil mengirim ${jumlahUntukDikirim} SOL ke ${alamatAcak[i]}`);
+      await ensureRentExemptAccount(toPublicKey);
+      await sendSol(keypairs[currentKeypairIndex], toPublicKey, amountToSend);
+      console.log(`Successfully sent ${amountToSend} SOL to ${randomAddresses[i]}`);
+      successfulTransactions++; // Increment the counter for each successful transaction
     } catch (error) {
-      console.error(`Gagal mengirim SOL ke ${alamatAcak[i]}:`, error);
+      console.error(`Failed to send SOL to ${randomAddresses[i]}:`, error);
     }
-    indeksKeypairSaatIni = (indeksKeypairSaatIni + 1) % keypairs.length;
-    await delay(jedaAntaraPermintaan);
+    currentKeypairIndex = (currentKeypairIndex + 1) % keypairs.length;
+    await delay(delayBetweenRequests);
+
+    if (successfulTransactions >= 100) { // Check if the number of successful transactions has reached 100
+      console.log('Reached 100 transactions, script stopping.');
+      break; // Exit the loop if 100 transactions are reached
+    }
   }
 })();
