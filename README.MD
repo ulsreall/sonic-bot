@@ -18,11 +18,10 @@ npm install
 
 ### 3. Konfigurasi .env File
 
-edit dengan private key kalian, dan atur berapa jumlah transaksi untuk 1x menjalankan script
+edit dengan private key kalian
 
 ```bash
 PRIVATE_KEYS='["your private key here"]'
-JUMLAH_TRANSAKSI=5
 ```
 
 ### 4. Run script
