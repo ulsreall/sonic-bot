@@ -32,9 +32,8 @@ npm run start
 
 ### 4. Selesai
 
-```bash
 Bot akan berhenti ketika sudah mencapai 100 transaksi
-```
+
 
 \*pastikan udah install node js
 
